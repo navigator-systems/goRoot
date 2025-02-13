@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createOrUpdateJob(name, execFiles, namespace, image string, configNames []string) error {
+func createOrUpdateJob(name, execFiles, namespace, image, command string, configNames []string) error {
 	ctx := context.TODO()
 
 	clientset, _ := K8sConfig()
@@ -56,12 +56,11 @@ func createOrUpdateJob(name, execFiles, namespace, image string, configNames []s
 		},
 	}
 
-	// Define the container with volume mounts
 	container := []corev1.Container{
 		{
 			Name:    "script-runner",
 			Image:   image,
-			Command: []string{"root", fmt.Sprintf("%s", execFiles)},
+			Command: []string{command, fmt.Sprintf("%s", execFiles)},
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      "script-volume",

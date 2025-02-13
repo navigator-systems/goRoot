@@ -28,23 +28,52 @@
                 return;
             }
 
+            let envVars = {};
+            document.querySelectorAll(".env-input").forEach(input => {
+                let key = input.querySelector(".env-key").value.trim();
+                let value = input.querySelector(".env-value").value.trim();
+                if (key) envVars[key] = value;
+            });
+
+            let cpuLimit = document.getElementById("cpuLimit").value.trim();
+            let ramLimit = document.getElementById("ramLimit").value.trim();
+            let command = document.getElementById("command").value.trim();
+
             document.getElementById("output").innerHTML = "<em>Running...</em>";
 
             fetch("/execute", {
                 method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: JSON.stringify({ scripts: scripts })
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    scripts: scripts,
+                    env: envVars,
+                    cpu: cpuLimit,
+                    ram: ramLimit,
+                    command: command
+                })
             })
             .then(response => response.text())
             .then(data => document.getElementById("output").innerText = data)
             .catch(error => console.error("Error:", error));
+        }
+
+        function addEnvVar() {
+            let envContainer = document.getElementById("envContainer");
+            let div = document.createElement("div");
+            div.classList.add("input-group", "mb-2", "env-input");
+            div.innerHTML = `
+                <input type="text" class="form-control env-key" placeholder="Key">
+                <input type="text" class="form-control env-value" placeholder="Value">
+                <button class="btn btn-danger" onclick="this.parentElement.remove()">Remove</button>
+            `;
+            envContainer.appendChild(div);
         }
     </script>
 </head>
 <body>
     <div class="container">
         <h1>goRoot</h1>
-          
+        
         <div class="mb-3">
             <label for="scriptSelect" class="form-label">Select Scripts:</label>
             <select class="form-select" id="scriptSelect" multiple>
@@ -52,9 +81,34 @@
             </select>
         </div>
 
+        <div class="mb-3">
+            <label class="form-label">Set Environment Variables:</label>
+            <div id="envContainer"></div>
+            <button class="btn btn-success btn-sm" onclick="addEnvVar()">Add Variable</button>
+        </div>
+
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">Resources:</label>
+                <div class="input-group mb-2">
+                    <input type="text" id="cpuLimit" class="form-control" placeholder="CPU Limit (e.g., 500m)">
+                </div>
+                <div class="input-group">
+                    <input type="text" id="ramLimit" class="form-control" placeholder="RAM Limit (e.g., 256Mi)">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Command or Binary:</label>
+                <div class="input-group">
+                    <input type="text" id="command" class="form-control" placeholder="Command (e.g., root)">
+                </div>
+            </div>
+        </div>
+
         <button class="btn btn-primary" onclick="runScript()">Run Script</button>
         <button class="btn btn-secondary" onclick="document.getElementById('output').innerText = ''">Clear Output</button>
         <button class="btn btn-secondary" onclick="location.reload()">Refresh</button>
+        
         <h3 class="mt-4">Output:</h3>
         <div id="output" class="output-container"></div>
     </div>

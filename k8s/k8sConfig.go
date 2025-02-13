@@ -28,7 +28,10 @@ func K8sConfig() (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
-func K8smanagement(w http.ResponseWriter, namespace, image string, dataMap map[string]string) {
+func K8smanagement(w http.ResponseWriter, kubernetesData ops.K8sValues) {
+	//func K8smanagement(w http.ResponseWriter, namespace, image string, dataMap map[string]string, env map[string]string, cpu, ram string) {
+
+	fmt.Println(kubernetesData.Env, kubernetesData.CPU, kubernetesData.RAM)
 	log.Println("Creating resources...")
 	fmt.Fprintf(w, "Creating resources...\n")
 
@@ -36,15 +39,15 @@ func K8smanagement(w http.ResponseWriter, namespace, image string, dataMap map[s
 	var configNames []string // variable for configMap names
 
 	//Check if namespace exists
-	statusNamespce, err := createNamespace(namespace)
+	statusNamespce, err := createNamespace(kubernetesData.Namespace)
 	if err != nil {
 		http.Error(w, "Failed to create namespace", http.StatusInternalServerError)
 	}
 	fmt.Fprintf(w, "%s", statusNamespce)
 	// Create configMap
-	for name, data := range dataMap {
+	for name, data := range kubernetesData.Data {
 		fmt.Fprintln(w, "Creating ConfigMap: ", name)
-		configMap, err := createUpdateConfigMap(name, data, namespace)
+		configMap, err := createUpdateConfigMap(name, data, kubernetesData.Namespace)
 		fmt.Fprintln(w, "Created ConfigMap: ", configMap)
 		if err != nil {
 			http.Error(w, "Failed to create/update ConfigMap", http.StatusInternalServerError)
@@ -67,7 +70,7 @@ func K8smanagement(w http.ResponseWriter, namespace, image string, dataMap map[s
 
 	}
 
-	err = createOrUpdateJob(jobName, executeFile, namespace, image, configNames)
+	err = createOrUpdateJob(jobName, executeFile, kubernetesData.Namespace, kubernetesData.Image, kubernetesData.Command, configNames)
 	if err != nil {
 		http.Error(w, "Failed to create/update Job", http.StatusInternalServerError)
 		log.Println("Failed to create/update Job", err)
@@ -75,8 +78,8 @@ func K8smanagement(w http.ResponseWriter, namespace, image string, dataMap map[s
 
 	fmt.Fprintln(w, "Job created...")
 	log.Println("Job created...")
-	waitForJobCompletion(jobName, namespace)
-	logs, err := getJobLogs(jobName, namespace)
+	waitForJobCompletion(jobName, kubernetesData.Namespace)
+	logs, err := getJobLogs(jobName, kubernetesData.Namespace)
 	if err != nil {
 		http.Error(w, "Failed to get logs", http.StatusInternalServerError)
 		log.Println("Failed to get logs", err)

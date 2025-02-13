@@ -21,7 +21,11 @@ type ImageUploadRequest struct {
 }
 
 type ExecuteRequest struct {
-	Scripts []string `json:"scripts"`
+	Scripts []string          `json:"scripts"`
+	Command string            `json:"command"`
+	Env     map[string]string `json:"env"`
+	CPU     string            `json:"cpu"`
+	RAM     string            `json:"ram"`
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -126,11 +130,25 @@ func executeHandler(w http.ResponseWriter, r *http.Request) {
 		data[scriptName] = scriptData
 
 	}
+	var command string
+	if req.Command != "" {
+		command = req.Command
+	} else {
+		command = globalConfig.Command
+	}
 
+	fmt.Println("Command: ", command)
+	Values := ops.K8sValues{
+		Namespace: globalConfig.Namespace,
+		Image:     globalConfig.Image,
+		Command:   command,
+		Data:      data,
+		Env:       req.Env,
+		CPU:       req.CPU,
+		RAM:       req.RAM,
+	}
 	k8s.K8smanagement(w,
-		globalConfig.Namespace,
-		globalConfig.Image,
-		data,
+		Values,
 	)
 
 }
