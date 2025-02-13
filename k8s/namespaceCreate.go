@@ -29,7 +29,7 @@ func createNamespace(namespace string) (string, error) {
 	_, err = clientset.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
 	if err != nil {
 		log.Println("Failed to create namespace", err)
-		return fmt.Sprintf("Failed to create namespace", err), fmt.Errorf("failed to create namespace: %w", err)
+		return fmt.Sprintf("Failed to create namespace %v", err), fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	log.Printf("Namespace %s created successfully\n", namespace)
