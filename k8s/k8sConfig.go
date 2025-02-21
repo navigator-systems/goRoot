@@ -12,6 +12,18 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+type jobValues struct {
+	NameJob     string
+	ExecFiles   string
+	Namespace   string
+	Image       string
+	Environment map[string]string
+	CPU         string
+	RAM         string
+	Command     string
+	ConfigNames []string
+}
+
 func K8sConfig() (*kubernetes.Clientset, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -31,7 +43,6 @@ func K8sConfig() (*kubernetes.Clientset, error) {
 func K8smanagement(w http.ResponseWriter, kubernetesData ops.K8sValues) {
 	//func K8smanagement(w http.ResponseWriter, namespace, image string, dataMap map[string]string, env map[string]string, cpu, ram string) {
 
-	fmt.Println(kubernetesData.Env, kubernetesData.CPU, kubernetesData.RAM)
 	log.Println("Creating resources...")
 	fmt.Fprintf(w, "Creating resources...\n")
 
@@ -56,6 +67,8 @@ func K8smanagement(w http.ResponseWriter, kubernetesData ops.K8sValues) {
 		configNames = append(configNames, configMap)
 	}
 
+	// Create Job
+	// Create job values
 	jobName := ops.CreateName()
 	fmt.Fprintln(w, "Creating Job: ", jobName)
 
@@ -70,7 +83,19 @@ func K8smanagement(w http.ResponseWriter, kubernetesData ops.K8sValues) {
 
 	}
 
-	err = createOrUpdateJob(jobName, executeFile, kubernetesData.Namespace, kubernetesData.Image, kubernetesData.Command, configNames)
+	jobVal := jobValues{
+		NameJob:     jobName,
+		ExecFiles:   executeFile,
+		Namespace:   kubernetesData.Namespace,
+		Image:       kubernetesData.Image,
+		Environment: kubernetesData.Env,
+		CPU:         kubernetesData.CPU,
+		RAM:         kubernetesData.RAM,
+		Command:     kubernetesData.Command,
+		ConfigNames: configNames,
+	}
+
+	err = createOrUpdateJob(jobVal)
 	if err != nil {
 		http.Error(w, "Failed to create/update Job", http.StatusInternalServerError)
 		log.Println("Failed to create/update Job", err)

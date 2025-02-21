@@ -9,19 +9,28 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createOrUpdateJob(name, execFiles, namespace, image, command string, configNames []string) error {
+func createOrUpdateJob(vals jobValues) error {
+	var envVars []corev1.EnvVar
+	for key, value := range vals.Environment {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  key,
+			Value: value,
+		})
+	}
+
 	ctx := context.TODO()
 
 	clientset, _ := K8sConfig()
 	// Check if the job exists
-	_, err := clientset.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
+	_, err := clientset.BatchV1().Jobs(vals.Namespace).Get(ctx, vals.NameJob, metav1.GetOptions{})
 	if err == nil {
 		log.Println("Job already exists, deleting old job before recreating...")
 		deletePolicy := metav1.DeletePropagationForeground
-		err = clientset.BatchV1().Jobs(namespace).Delete(ctx, name, metav1.DeleteOptions{
+		err = clientset.BatchV1().Jobs(vals.Namespace).Delete(ctx, vals.NameJob, metav1.DeleteOptions{
 			PropagationPolicy: &deletePolicy,
 		})
 		time.Sleep(10 * time.Second)
@@ -32,7 +41,7 @@ func createOrUpdateJob(name, execFiles, namespace, image, command string, config
 
 	// Create volume projections for each ConfigMap
 	var projections []corev1.VolumeProjection
-	for _, configName := range configNames {
+	for _, configName := range vals.ConfigNames {
 		projections = append(projections, corev1.VolumeProjection{
 			ConfigMap: &corev1.ConfigMapProjection{
 				LocalObjectReference: corev1.LocalObjectReference{Name: configName},
@@ -55,16 +64,31 @@ func createOrUpdateJob(name, execFiles, namespace, image, command string, config
 			},
 		},
 	}
+	var cpu, ram string
+	if vals.CPU == "" || vals.RAM == "" {
+		cpu = "500m"
+		ram = "512Mi"
+	} else {
+		cpu = vals.CPU
+		ram = vals.RAM
+	}
 
 	container := []corev1.Container{
 		{
 			Name:    "script-runner",
-			Image:   image,
-			Command: []string{command, fmt.Sprintf("%s", execFiles)},
+			Image:   vals.Image,
+			Command: []string{vals.Command, fmt.Sprintf("%s", vals.ExecFiles)},
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      "script-volume",
 					MountPath: "/app",
+				},
+			},
+			Env: envVars,
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse(cpu),
+					corev1.ResourceMemory: resource.MustParse(ram),
 				},
 			},
 		},
@@ -72,7 +96,7 @@ func createOrUpdateJob(name, execFiles, namespace, image, command string, config
 
 	// Define Job
 	job := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
+		ObjectMeta: metav1.ObjectMeta{Name: vals.NameJob},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
@@ -85,7 +109,7 @@ func createOrUpdateJob(name, execFiles, namespace, image, command string, config
 	}
 
 	// Create Job
-	_, err = clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
+	_, err = clientset.BatchV1().Jobs(vals.Namespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
 		log.Fatalf("Failed to create Job: %v", err)
 	}

@@ -3,6 +3,6 @@ Port = 8080
 Directory = "scripts"
 
 # Kubernetes Config
-Namespace = "testing"
+Namespace = "default"
 Command = "/bin/bash"
 Image = "rootproject/root"

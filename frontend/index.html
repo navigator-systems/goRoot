@@ -35,9 +35,15 @@
                 if (key) envVars[key] = value;
             });
 
-            let cpuLimit = document.getElementById("cpuLimit").value.trim();
-            let ramLimit = document.getElementById("ramLimit").value.trim();
-            let command = document.getElementById("command").value.trim();
+            let cpuValue = document.getElementById("cpuValue").value.trim();
+            let cpuUnit = document.getElementById("cpuUnit").value;
+            let cpuLimit = cpuValue ? cpuValue + cpuUnit : "";
+
+            let ramValue = document.getElementById("ramValue").value.trim();
+            let ramUnit = document.getElementById("ramUnit").value;
+            let ramLimit = ramValue ? ramValue + ramUnit : "";
+
+            let command = document.getElementById("commandInput").value.trim();
 
             document.getElementById("output").innerHTML = "<em>Running...</em>";
 
@@ -89,19 +95,29 @@
 
         <div class="mb-3 row">
             <div class="col-md-6">
-                <label class="form-label">Resources:</label>
+                <label class="form-label">CPU & RAM Limits:</label>
                 <div class="input-group mb-2">
-                    <input type="text" id="cpuLimit" class="form-control" placeholder="CPU Limit (e.g., 500m)">
+                    <input type="number" id="cpuValue" class="form-control" placeholder="CPU Value">
+                    <select id="cpuUnit" class="form-select">
+                        <option value="m">m</option>
+                        <option value="">Core</option>
+                    </select>
                 </div>
                 <div class="input-group">
-                    <input type="text" id="ramLimit" class="form-control" placeholder="RAM Limit (e.g., 256Mi)">
+                    <input type="number" id="ramValue" class="form-control" placeholder="RAM Value">
+                    <select id="ramUnit" class="form-select">
+                        <option value="Ki">Ki</option>
+                        <option value="Mi">Mi</option>
+                        <option value="Gi">Gi</option>
+                        <option value="Ti">Ti</option>
+                        <option value="Pi">Pi</option>
+                        <option value="Ei">Ei</option>
+                    </select>
                 </div>
             </div>
             <div class="col-md-6">
                 <label class="form-label">Command or Binary:</label>
-                <div class="input-group">
-                    <input type="text" id="command" class="form-control" placeholder="Command (e.g., root)">
-                </div>
+                <input type="text" id="commandInput" class="form-control" placeholder="Enter command">
             </div>
         </div>
 

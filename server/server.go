@@ -136,8 +136,6 @@ func executeHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		command = globalConfig.Command
 	}
-
-	fmt.Println("Command: ", command)
 	Values := ops.K8sValues{
 		Namespace: globalConfig.Namespace,
 		Image:     globalConfig.Image,
