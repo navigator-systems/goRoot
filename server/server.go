@@ -82,14 +82,16 @@ func executeHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		command = globalConfig.Command
 	}
+
 	Values := ops.K8sValues{
-		Namespace: globalConfig.Namespace,
-		Image:     globalConfig.Image,
-		Command:   command,
-		Data:      data,
-		Env:       req.Env,
-		CPU:       req.CPU,
-		RAM:       req.RAM,
+		Namespace:     globalConfig.Namespace,
+		Image:         globalConfig.Image,
+		Command:       command,
+		Data:          data,
+		Env:           req.Env,
+		CPU:           req.CPU,
+		RAM:           req.RAM,
+		SharedStorage: globalConfig.SharedStorage,
 	}
 	k8s.K8smanagement(w,
 		Values,
@@ -111,5 +113,3 @@ func MainServer(cfg config.Config) {
 
 	http.ListenAndServe(port, nil)
 }
-
-//curl http://service-name.namespace.svc.cluster.local:port

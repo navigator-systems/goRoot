@@ -12,9 +12,10 @@ type Config struct {
 	Port      int
 	Directory string
 	// K8sConfig
-	Namespace string
-	Command   string
-	Image     string
+	Namespace     string
+	Command       string
+	Image         string
+	SharedStorage string
 }
 
 const (

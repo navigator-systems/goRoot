@@ -64,6 +64,30 @@ func createOrUpdateJob(vals jobValues) error {
 			},
 		},
 	}
+
+	// Check if the shared volume name exists in k8s
+	log.Println("Checking if shared storage exists...")
+	log.Println("Shared storage name: ", vals.Storage)
+	if vals.Storage != "" {
+		err := createPVCIfNotExists(vals.Namespace, vals.Storage, "standard", ctx)
+		if err != nil {
+			log.Printf("Failed to create PVC: %v", err)
+		}
+		pvc, err := clientset.CoreV1().PersistentVolumeClaims(vals.Namespace).Get(ctx, vals.Storage, metav1.GetOptions{})
+
+		if err == nil && pvc != nil {
+			fmt.Println("Shared storage exists, adding to Job...")
+			volumes = append(volumes, corev1.Volume{
+				Name: "shared-storage",
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: vals.Storage,
+					},
+				},
+			})
+		}
+	}
+
 	var cpu, ram string
 	if vals.CPU == "" || vals.RAM == "" {
 		cpu = "500m"
@@ -73,18 +97,30 @@ func createOrUpdateJob(vals jobValues) error {
 		ram = vals.RAM
 	}
 
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "script-volume",
+			MountPath: "/app",
+		},
+	}
+
+	if vals.Storage != "" {
+		pvc, err := clientset.CoreV1().PersistentVolumeClaims(vals.Namespace).Get(context.TODO(), vals.Storage, metav1.GetOptions{})
+		if err == nil && pvc != nil {
+			volumeMounts = append(volumeMounts, corev1.VolumeMount{
+				Name:      "shared-storage",
+				MountPath: "/shared",
+			})
+		}
+	}
+
 	container := []corev1.Container{
 		{
-			Name:    "script-runner",
-			Image:   vals.Image,
-			Command: []string{vals.Command, fmt.Sprintf("%s", vals.ExecFiles)},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      "script-volume",
-					MountPath: "/app",
-				},
-			},
-			Env: envVars,
+			Name:         "script-runner",
+			Image:        vals.Image,
+			Command:      []string{vals.Command, fmt.Sprintf("%s", vals.ExecFiles)},
+			VolumeMounts: volumeMounts,
+			Env:          envVars,
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
 					corev1.ResourceCPU:    resource.MustParse(cpu),

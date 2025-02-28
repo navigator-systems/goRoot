@@ -21,6 +21,7 @@ type jobValues struct {
 	CPU         string
 	RAM         string
 	Command     string
+	Storage     string
 	ConfigNames []string
 }
 
@@ -93,6 +94,7 @@ func K8smanagement(w http.ResponseWriter, kubernetesData ops.K8sValues) {
 		RAM:         kubernetesData.RAM,
 		Command:     kubernetesData.Command,
 		ConfigNames: configNames,
+		Storage:     kubernetesData.SharedStorage,
 	}
 
 	err = createOrUpdateJob(jobVal)
