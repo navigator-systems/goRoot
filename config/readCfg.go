@@ -9,11 +9,10 @@ import (
 
 type Config struct {
 	// ServerConfig
-	Port      int
-	Directory string
-	// K8sConfig
-	Namespace     string
-	Command       string
+	Port          int    `toml:"port"`
+	Directory     string `toml:"directory"`
+	Namespace     string `toml:"namespace"`
+	Command       string `toml:"command"`
 	Image         string
 	SharedStorage string
 }

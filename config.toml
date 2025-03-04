@@ -1,9 +1,9 @@
 # Server Config
-Port = 8080
-Directory = "scripts"
+port = 8080
+directory = "scripts"
 
-# Kubernetes Config
-Namespace = "default"
-Command = "/bin/bash"
-Image = "rootproject/root"
-SharedStorage = "storage"
+# Kubernetes Root Config
+namespace = "default"
+command = "root"
+image = "rootproject/root"
+sharedStorage = "storage"

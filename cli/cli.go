@@ -13,6 +13,7 @@ func ExecCli() {
 		Usage: "A server to execute and manage root and C/C++ code.",
 		Commands: []*cli.Command{
 			startServer,
+			cliMode,
 		},
 	}
 
